@@ -52,6 +52,20 @@ withSplunkWrapNode("master") {
                               /bin/bash -c /kafka-connect/run_kafka_connect.sh
                               """;
         }
+        stage('Tear down') {
+            println "=============delete splunk cloud stack=============="
+            withCredentials([file(credentialsId: 'gdi_connectors_orca', variable: 'ORCA_CREDENTIALS')]) {
+                sh "tar -ovxf $ORCA_CREDENTIALS";
+                splunkPrepareAndCheckOut request: dockerReq,
+                                         files: "${WORKSPACE}/.orca, ${WORKSPACE}/.ssh";
+            }
+            splunkDockerStart imageName: imageName,
+                              mountBindings: '/var/run/docker.sock:/var/run/docker.sock:ro',
+                              script:
+                              """
+                              /bin/bash -c /kafka-connect/run_kafka_connect.sh
+                              """;
+        }
     }
     catch (BadDockerExitCode e) {
         currentBuild.result = "FAILURE";
